@@ -27,7 +27,6 @@
 		(var altFireModeComponent:gfx = "altFireModeEntity.altFireMode")
 		(var isAltFireModeActive:bool = "altFireModeComponent.isActive"  (event "altFireModeComponent.evIsActiveChanged"))
 
-
 		(var fireModeEntity:gfx = "$datahub.getSingleEntity(CC.fireModeSlot)")
 		(var fireModeComponent:gfx = "fireModeEntity.fireModeSlot")
 		(var isBurstFire:bool = "fireModeComponent.isBurstFire")
@@ -42,11 +41,13 @@
 		(var isSecondaryActive:bool = "isAltFireModeActive && hasSecondaryAmmo && !isSecondaryAmmoDepleted")
 
 		
-		(var status:str = "	slot.weaponSlot.state == SC.Weapons.GUN_STATE.DESTROYED ? '_inactive' :
-							isIn(slot.weaponSlot.state, [SC.Weapons.GUN_STATE.SWITCHING_CRITICAL, SC.Weapons.GUN_STATE.CRITICAL]) ? '_disabled'
-																					: ''" (event "slot.weaponSlot.evStateChanged"))
+		(var status:str = " slot.weaponSlot.state == SC.Weapons.GUN_STATE.BROKEN 
+								? '_inactive'
+								: isIn(slot.weaponSlot.state, [SC.Weapons.GUN_STATE.SWITCHING_CRITICAL, SC.Weapons.GUN_STATE.CRITICAL])
+								? '_disabled'
+								: ''" (event "slot.weaponSlot.evStateChanged"))
 
-		(var icon:str = "isSecondaryActive ? 'url:../ammo/' + _id + '_sec' + status + '.png' : 'url:../ammo/' + _id + status + '.png'")
+		(var icon:str = "isSecondaryActive ? 'url:../ammo/' + _id + '_sec' + status + '.png' : isSecondaryAmmoDepleted && isAltFireModeActive ? 'url:../ammo/' + _id + '_reserved' + status + '.png' : 'url:../ammo/' + _id + status + '.png'")
 
 		
 		(var command:number = "slot.weaponSlot.command")
@@ -92,7 +93,11 @@
 		(var progress:number = "slot.progress.max != 0 ? 1 - slot.progress.value / slot.progress.max : 0" (event "slot.progress.evChanged"))
 		(var remain:number = "isWorking ? slot.progress.value : slot.progress.max - slot.progress.value" (event "slot.progress.evChanged"))
 
-		(var showProgressBar:bool = "(isActive || isAirplanesVisType) && progress > 0")
+		(var isHiddenProgress:bool = "weaponType == SC.Ships.SHIP_WEAPON_TYPES.ATBA && !isWeaponActive")
+
+		(var showProgressBar:bool = "!isHiddenProgress && (isActive || isAirplanesVisType) && progress > 0")
+
+		(var shotsCount:number = "slot.weaponSlot.shotCount" (event "slot.weaponSlot.evShotCountChanged"))
 
 		(controller $Animation
 			(bindcall play
@@ -107,21 +112,17 @@
 
 		(macro STAGE_SIZE)
 
-		#mod
-        (var _overMatch:str = "shipTTX.artillery && shipTTX.artillery.ammoAP && shipTTX.artillery.ammoAP.caliber ? floor(shipTTX.artillery.ammoAP.caliber.value / 14.3) : '000'")
-        (var _hePenetration:str = "shipTTX.artillery && shipTTX.artillery.ammoHE && shipTTX.artillery.ammoHE.piercing ? shipTTX.artillery.ammoHE.piercing.value : '000'")
-	    (var _csPenetration:str = "shipTTX.artillery && shipTTX.artillery.ammoCS && shipTTX.artillery.ammoCS.piercing ? shipTTX.artillery.ammoCS.piercing.value : '000'")
+		#mod penetration / overmatch values from shipTTX
+		(var _overMatch:str = "shipTTX.artillery && shipTTX.artillery.ammoAP && shipTTX.artillery.ammoAP.caliber ? floor(shipTTX.artillery.ammoAP.caliber.value / 14.3) : '000'")
+		(var _hePenetration:str = "shipTTX.artillery && shipTTX.artillery.ammoHE && shipTTX.artillery.ammoHE.piercing ? shipTTX.artillery.ammoHE.piercing.value : '000'")
+		(var _csPenetration:str = "shipTTX.artillery && shipTTX.artillery.ammoCS && shipTTX.artillery.ammoCS.piercing ? shipTTX.artillery.ammoCS.piercing.value : '000'")
 		(var _airSupportP:str = "shipTTX.airSupport && shipTTX.airSupport.bomberHE && shipTTX.airSupport.bomberHE.payload && shipTTX.airSupport.bomberHE.payload.piercing ? shipTTX.airSupport.bomberHE.payload.piercing.value : '000'")
-		
 		(var _fighterHEP:str = "shipTTX.squadrons && shipTTX.squadrons.fighter && shipTTX.squadrons.fighter.payload && shipTTX.squadrons.fighter.payload.piercing ? shipTTX.squadrons.fighter.payload.piercing.value : '000'")
 		(var _diveHEP:str = "shipTTX.squadrons && shipTTX.squadrons.diveBomber && shipTTX.squadrons.diveBomber.payload && shipTTX.squadrons.diveBomber.payload.piercing ? shipTTX.squadrons.diveBomber.payload.piercing.value : '000'")
 		(var _skipHEP:str = "shipTTX.squadrons && shipTTX.squadrons.skipBomber && shipTTX.squadrons.skipBomber.payload && shipTTX.squadrons.skipBomber.payload.piercing ? shipTTX.squadrons.skipBomber.payload.piercing.value : '000'")
-		
 		(var _altFighterHEP:str = "shipTTX.squadrons && shipTTX.squadrons.fighterAlt && shipTTX.squadrons.fighterAlt.payload && shipTTX.squadrons.fighterAlt.payload.piercing ? shipTTX.squadrons.fighterAlt.payload.piercing.value : '000'")
 		(var _altDiveHEP:str = "shipTTX.squadrons && shipTTX.squadrons.diveBomberAlt && shipTTX.squadrons.diveBomberAlt.payload && shipTTX.squadrons.diveBomberAlt.payload.piercing ? shipTTX.squadrons.diveBomberAlt.payload.piercing.value : '000'")
 		(var _altSkipHEP:str = "shipTTX.squadrons && shipTTX.squadrons.skipBomberAlt && shipTTX.squadrons.skipBomberAlt.payload && shipTTX.squadrons.skipBomberAlt.payload.piercing ? shipTTX.squadrons.skipBomberAlt.payload.piercing.value : '000'")
-	    
-		#(var _airSupDC_Damage:str = "shipTTX.squadrons && shipTTX.airSupport.bomberDC && shipTTX.airSupport.bomberDC.bombDC && (shipTTX.airSupport.bomberDC.bombDC.numBombs && shipTTX.airSupport.bomberDC.bombDC.damage) ? (shipTTX.airSupport.bomberDC.bombDC.damage.value + '*' + shipTTX.airSupport.bomberDC.bombDC.numBombs.value) : '000'")
 		#mod
 	)
 
@@ -136,7 +137,8 @@
 		(renderer = "'AngleSwitcher'")
 		(bind enabled "isSelectorVisible")
 		(args	_command="optionsCommandId"
-				_height="_height")
+				_height="_height"
+				_weaponType="weaponType")
 		(exprs
 			(scope
 				(bind weaponSelected "isWeaponActive")
@@ -159,7 +161,7 @@
 		(block
 			(controller $Instance renderer='AngleBackground'
 				(bind enabled "isAlive && isAngleVisTypeNeedBg")
-				(args _width = "_width" _height = "_height")
+				(args _width = "_width" _height = "_height" _weaponType = "weaponType")
 				(exprs
 					(scope
 						(bind _selected "slotOptions.selected" (event "slotOptions.evSelectedChanged"))
@@ -182,20 +184,19 @@
 				(bind _isPreSelected "isWeaponActive && isSelected")
 				(bind _isSelected "isWeaponActive && isActive")
 
+				#mod
 				(bind _id "_id")
 				(bind _overMatch "_overMatch")
 				(bind _hePenetration "_hePenetration")
 				(bind _csPenetration "_csPenetration")
 				(bind _airSupportP "_airSupportP")
-
 				(bind _fighterHEP "_fighterHEP")
 				(bind _diveHEP "_diveHEP")
 				(bind _skipHEP "_skipHEP")
-
 				(bind _altFighterHEP "_altFighterHEP")
 				(bind _altDiveHEP "_altDiveHEP")
 				(bind _altSkipHEP "_altSkipHEP")
-				(bind _airSupDC_Damage "_airSupDC_Damage")
+				#mod
 			)
 			(bind alpha "slotAlpha")
 		)
@@ -250,7 +251,7 @@
 		(controller $FxInstance lifetime=0.5
 			(bind renderer "'SlotWorkStartedFX'")
 			(args accented = "!(isWeaponActive)")
-			(bindcall create (event "slot.weaponSlot.evReloaded") (bind enabled "isActive && !(isAirplanesVisType)"))
+			(bindcall create (event "slot.weaponSlot.evReloaded") (bind enabled "!isHiddenProgress && isActive && !(isAirplanesVisType)"))
 		)
 
 		(block
@@ -267,6 +268,16 @@
 					accented="true"
 				)
 				(bindcall create (bind enabled "isSecondaryAmmoDepleted"))
+			)
+		)
+		
+		(block
+			(bind visible "shotsCount > 0")
+			(class $FullsizeAbsolute)
+			(tf
+				(style (position = "absolute") (top = "XS") (right = "XS"))
+				(class $TextDefaultBoldNM)
+				(bind text "shotsCount")
 			)
 		)
 
@@ -298,7 +309,7 @@
 			(bind enabled "isAirplanesVisType")
 			(args "_id" "!(showProgressBar)")
 		)
-		
+
 		(element HIT_TEST_TOOLTIP_CONTAINER
 			(macro MOUSE_LMB_EXTERNAL_CALL 'direct.action' "['weaponSlot.pressed', [command]]" "isHotKeyEnabled")
 
@@ -309,6 +320,7 @@
 					_entityId = "ownerEntity.id"
 					_isSecondaryActive = "isSecondaryActive"
 					_isActiveBurst = "isActiveBurst"
+					_isSecondaryAmmoDepleted = "isSecondaryAmmoDepleted"
 				)
 				(align="bottom|center")
 				(position="border")
@@ -319,6 +331,7 @@
 		)
 	)
 )
+
 (def layout SlotItem ()
 	(scope
 		(var _itemImageUrl:str = '')
@@ -336,22 +349,20 @@
 		(var _isSelected:bool = false)
 		(var _selectedAnimation:bool = true)
 
-        (var _vpText:str = '')
+		#mod
+		(var _vpText:str = '')
 		(var _id:str = '')
-
 		(var _overMatch:str = '')
-        (var _hePenetration:str = '')
-        (var _csPenetration:str = '')
+		(var _hePenetration:str = '')
+		(var _csPenetration:str = '')
 		(var _airSupportP:str = '')
-
 		(var _fighterHEP:str = '')
 		(var _diveHEP:str = '')
 		(var _skipHEP:str = '')
-
 		(var _altFighterHEP:str = '')
 		(var _altDiveHEP:str = '')
 		(var _altSkipHEP:str = '')
-		(var _airSupDC_Damage:str = '')
+		#mod
 
 		(macro MOUSE_HANDLER_SCOPE)
 	)
@@ -373,7 +384,7 @@
 			(bind height "_height")
 		)
 	)
-
+	
 	(element SlotPreSelectedFrame
 		(bind visible "_isPreSelected")
 		(scope
@@ -399,127 +410,144 @@
 		)
 	)
 
-
+	
 	(element SlotLockedIndicator "_isLocked")
 
-    #Mod
-    (element VpNumber
-        (scope
+	
+	#Mod penetration numbers
+	(element VpNumber
+		(scope
 			(bind _vpText "_id == 'ap' ? _overMatch : (_id == 'he' ? _hePenetration : _csPenetration)")
 		)
-        (bind visible "_id == 'he' || _id == 'ap' || _id == 'cs'")
-        (bind text "_vpText")
-    )
+		(bind visible "_id == 'he' || _id == 'ap' || _id == 'cs'")
+		(bind text "_vpText")
+	)
+
 	(element AirSupVpNumber
-        (scope
-			(bind _airSupVpText "_id == 'airsupport_he' ? _airSupportP : 'N/A')")
+		(scope
+			(bind _airSupVpText "_id == 'airsupport_he' ? _airSupportP : 'N/A'")
 		)
-        (bind visible "_id == 'airsupport_he'")
-        (bind text "_airSupVpText")
-    )
+		(bind visible "_id == 'airsupport_he'")
+		(bind text "_airSupVpText")
+	)
+
 	(element SquaVpNumber
-        (scope
+		(scope
 			(bind _squaVpText "_id == 'fighter_he' ? _fighterHEP : (_id == 'dive_he' ? _diveHEP : _skipHEP)")
 		)
-        (bind visible "_id == 'fighter_he' || _id == 'dive_he' || _id == 'skip_he'")
-        (bind text "_squaVpText")
-    )
+		(bind visible "_id == 'fighter_he' || _id == 'dive_he' || _id == 'skip_he'")
+		(bind text "_squaVpText")
+	)
+
 	(element AltSquaVpNumber
-        (scope
+		(scope
 			(bind _altSquaVpText "_id == 'fighter_he_alt' ? _altFighterHEP : (_id == 'dive_he_alt' ? _altDiveHEP : _altSkipHEP)")
 		)
-        (bind visible "_id == 'fighter_he_alt' || _id == 'dive_he_alt' || _id == 'skip_he_alt'")
-        (bind text "_altSquaVpText")
-    )
-    #Mod
+		(bind visible "_id == 'fighter_he_alt' || _id == 'dive_he_alt' || _id == 'skip_he_alt'")
+		(bind text "_altSquaVpText")
+	)
+	#Mod
+
+	(block
+		(style
+			(position = "absolute")
+			(backgroundColor = 0x01000000)
+			(width = "_width")
+			(height = "_height")
+		)
+
+		(macro MOUSE_EVENTS_DISPATCHER)
+	)
 )
 
 (def layout VpNumber()
 
-        (scope
-            (var _vpText:str = '')
-        )
-        (block
-            (style
-                (position = "absolute")
-                (left = 31px)
-                (top = 5px)
-                (pivotX = 0)
-                (pivotY = "SLOT_FX_SIZE")
-            )
-            (tf
-                (style
-                    (fontSize = 18)
-                    (textColor = 0x00FF00)
-                )
-                (bind text "_vpText")
-            )
-        )
+	(scope
+		(var _vpText:str = '')
+	)
+	(block
+		(style
+			(position = "absolute")
+			(left = 31px)
+			(top = 5px)
+			(pivotX = 0)
+			(pivotY = "SLOT_FX_SIZE")
+		)
+		(tf
+			(style
+				(fontSize = 18)
+				(textColor = 0x00FF00)
+			)
+			(bind text "_vpText")
+		)
+	)
 )
+
 (def layout AirSupVpNumber()
 
-        (scope
-            (var _airSupVpText:str = '')
-        )
-        (block
-            (style
-                (position = "absolute")
-                (left = 38px)
-                (top = 5px)
-                (pivotX = 0)
-                (pivotY = "SLOT_FX_SIZE")
-            )
-            (tf
-                (style
-                    (fontSize = 18)
-                    (textColor = 0x00FF00)
-                )
-                (bind text "_airSupVpText")
-            )
-        )
+	(scope
+		(var _airSupVpText:str = '')
+	)
+	(block
+		(style
+			(position = "absolute")
+			(left = 38px)
+			(top = 5px)
+			(pivotX = 0)
+			(pivotY = "SLOT_FX_SIZE")
+		)
+		(tf
+			(style
+				(fontSize = 18)
+				(textColor = 0x00FF00)
+			)
+			(bind text "_airSupVpText")
+		)
+	)
 )
+
 (def layout SquaVpNumber()
 
-        (scope
-            (var _squaVpText:str = '')
-        )
-        (block
-            (style
-                (position = "absolute")
-                (left = 38px)
-                (top = 5px)
-                (pivotX = 0)
-                (pivotY = "SLOT_FX_SIZE")
-            )
-            (tf
-                (style
-                    (fontSize = 18)
-                    (textColor = 0x00FF00)
-                )
-                (bind text "_squaVpText")
-            )
-        )
+	(scope
+		(var _squaVpText:str = '')
+	)
+	(block
+		(style
+			(position = "absolute")
+			(left = 38px)
+			(top = 5px)
+			(pivotX = 0)
+			(pivotY = "SLOT_FX_SIZE")
+		)
+		(tf
+			(style
+				(fontSize = 18)
+				(textColor = 0x00FF00)
+			)
+			(bind text "_squaVpText")
+		)
+	)
 )
+
 (def layout AltSquaVpNumber()
 
-        (scope
-            (var _altSquaVpText:str = '')
-        )
-        (block
-            (style
-                (position = "absolute")
-                (left = 38px)
-                (top = 5px)
-                (pivotX = 0)
-                (pivotY = "SLOT_FX_SIZE")
-            )
-            (tf
-                (style
-                    (fontSize = 18)
-                    (textColor = 0x00FF00)
-                )
-                (bind text "_altSquaVpText")
-            )
-        )
+	(scope
+		(var _altSquaVpText:str = '')
+	)
+	(block
+		(style
+			(position = "absolute")
+			(left = 38px)
+			(top = 5px)
+			(pivotX = 0)
+			(pivotY = "SLOT_FX_SIZE")
+		)
+		(tf
+			(style
+				(fontSize = 18)
+				(textColor = 0x00FF00)
+			)
+			(bind text "_altSquaVpText")
+		)
+	)
 )
-
